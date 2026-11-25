@@ -19,7 +19,7 @@ function salvarCliente(d,token){
       if(!email||!d.SENHA_INICIAL)throw Error('Informe e-mail e senha inicial para criar acesso.');
       const ja=records_('USUARIOS').some(x=>String(x.REFERENCIA_ID)===String(r.ID)&&String(x.PERFIL)==='CLIENTE');
       if(ja)throw Error('Este cliente já possui usuário vinculado.');
-      acesso=criarUsuario({REFERENCIA_ID:r.ID,NOME_EXIBICAO:r.NOME,EMAIL:email,PERFIL:'CLIENTE',SENHA:d.SENHA_INICIAL},token);
+      acesso=criarUsuario_({REFERENCIA_ID:r.ID,NOME_EXIBICAO:r.NOME,EMAIL:email,PERFIL:'CLIENTE',SENHA:d.SENHA_INICIAL},token);
     }
     return{id:String(r.ID),existente,nome:String(r.NOME),acesso};
   }finally{lock.releaseLock();}

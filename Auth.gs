@@ -1,12 +1,19 @@
 /**
  * Autenticação e autorização do ProjServiços.
- * O bootstrap do primeiro administrador é privado e executado no editor.
+ * Funções terminadas em _ são privadas para chamadas do HTML.
  */
-const AUTH_CONFIG = Object.freeze({ SESSION_TTL_SECONDS: 21600, HASH_ITERATIONS: 12000, RECOVERY_TTL_SECONDS: 900 });
+const AUTH_CONFIG = Object.freeze({
+  SESSION_TTL_SECONDS: 21600,
+  HASH_ITERATIONS: 12000,
+  RECOVERY_TTL_SECONDS: 900,
+  RECOVERY_MAX_ATTEMPTS: 5,
+  RECOVERY_REQUEST_WINDOW_SECONDS: 60,
+  RECOVERY_GLOBAL_LIMIT: 20
+});
 
 function normalizarEmail_(email) {
   const e = String(email || '').trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) throw new Error('E-mail inválido.');
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(e)) throw new Error('E-mail inválido.');
   return e;
 }
 function gerarSalt_() { return Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, ''); }
@@ -27,15 +34,19 @@ function usuarioPorEmail_(email) {
   return records_('USUARIOS').find(u => String(u.EMAIL || '').toLowerCase() === e && String(u.ATIVO).toUpperCase() !== 'FALSE');
 }
 function configurarPrimeiroAdministrador_(email, senha, nome) {
-  if (records_('USUARIOS').some(u => String(u.PERFIL).toUpperCase() === 'ADMINISTRADOR')) throw new Error('Já existe administrador cadastrado.');
-  const e = normalizarEmail_(email), salt = gerarSalt_();
-  const u = { ID:id_('USR'), REFERENCIA_ID:'', NOME_EXIBICAO:String(nome || 'Administrador').trim(),
-    EMAIL:e, PERFIL:'ADMINISTRADOR', SENHA_HASH:derivarSenha_(senha,salt), SENHA_SALT:salt,
-    ATIVO:true, CRIADO_EM:new Date(), ULTIMO_ACESSO:'' };
-  sheet_('USUARIOS').appendRow(SHEET_SCHEMAS.USUARIOS.map(k => u[k] ?? ''));
-  return { ok:true, email:e };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    if (records_('USUARIOS').some(u => String(u.PERFIL).toUpperCase() === 'ADMINISTRADOR')) throw new Error('Já existe administrador cadastrado.');
+    const e = normalizarEmail_(email), salt = gerarSalt_();
+    const u = { ID:id_('USR'), REFERENCIA_ID:'', NOME_EXIBICAO:String(nome || 'Administrador').trim(),
+      EMAIL:e, PERFIL:'ADMINISTRADOR', SENHA_HASH:derivarSenha_(senha,salt), SENHA_SALT:salt,
+      ATIVO:true, CRIADO_EM:new Date(), ULTIMO_ACESSO:'' };
+    sheet_('USUARIOS').appendRow(SHEET_SCHEMAS.USUARIOS.map(k => u[k] ?? ''));
+    return { ok:true, email:e };
+  } finally { lock.releaseLock(); }
 }
-function criarUsuario(d, token) {
+function criarUsuario_(d, token) {
   exigirPerfil_(['ADMINISTRADOR'], token);
   if (!d || !['ADMINISTRADOR','FUNCIONARIO','CLIENTE'].includes(String(d.PERFIL).toUpperCase())) throw new Error('Perfil inválido.');
   const email = normalizarEmail_(d.EMAIL);
@@ -48,6 +59,12 @@ function criarUsuario(d, token) {
     ATIVO:true, CRIADO_EM:new Date(), ULTIMO_ACESSO:'' };
   sheet_('USUARIOS').appendRow(SHEET_SCHEMAS.USUARIOS.map(k => u[k] ?? ''));
   return { id:u.ID, email:u.EMAIL, perfil:u.PERFIL };
+}
+function criarUsuario(d, token) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try { return criarUsuario_(d, token); }
+  finally { lock.releaseLock(); }
 }
 function entrar(email, senha) {
   const u = usuarioPorEmail_(email);
@@ -101,26 +118,50 @@ function gravarNovaSenha_(u, senha) {
   s.getRange(row, SHEET_SCHEMAS.USUARIOS.indexOf('SENHA_HASH')+1).setValue(hash);
 }
 function solicitarRecuperacaoSenha(email) {
-  const e = normalizarEmail_(email), cache = CacheService.getScriptCache(), limite = 'recuperacao-limite:' + e;
-  if (cache.get(limite)) throw new Error('Aguarde um minuto antes de solicitar outro código.');
-  cache.put(limite, '1', 60);
-  const u = usuarioPorEmail_(e);
-  // Resposta igual para e-mails cadastrados ou não, evitando revelar contas existentes.
-  if (u) {
-    const codigo = Utilities.getUuid().replace(/-/g, '').slice(0, 8).toUpperCase();
-    cache.put('recuperacao:' + e, codigo, AUTH_CONFIG.RECOVERY_TTL_SECONDS);
-    MailApp.sendEmail({to:e, subject:'Código de recuperação - ProjServiços',
-      body:'Seu código de recuperação é: ' + codigo + '\nEle expira em 15 minutos. Se você não solicitou, ignore esta mensagem.'});
-  }
-  return {ok:true, mensagem:'Se o e-mail estiver cadastrado, enviaremos um código de recuperação.'};
+  const e = normalizarEmail_(email), cache = CacheService.getScriptCache();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const limite = 'recuperacao-limite:' + e;
+    if (cache.get(limite)) throw new Error('Aguarde um minuto antes de solicitar outro código.');
+    const globalKey = 'recuperacao-global:' + Utilities.formatDate(new Date(), 'UTC', 'yyyyMMddHHmm');
+    const total = Number(cache.get(globalKey) || 0);
+    if (total >= AUTH_CONFIG.RECOVERY_GLOBAL_LIMIT) throw new Error('Limite temporário de solicitações atingido. Tente novamente mais tarde.');
+    cache.put(globalKey, String(total + 1), 120);
+    cache.put(limite, '1', AUTH_CONFIG.RECOVERY_REQUEST_WINDOW_SECONDS);
+    const u = usuarioPorEmail_(e);
+    if (u) {
+      const codigo = Utilities.getUuid().replace(/-/g, '').slice(0, 8).toUpperCase();
+      cache.put('recuperacao:' + e, codigo, AUTH_CONFIG.RECOVERY_TTL_SECONDS);
+      cache.remove('recuperacao-tentativas:' + e);
+      MailApp.sendEmail({to:e, subject:'Código de recuperação - ProjServiços',
+        body:'Seu código de recuperação é: ' + codigo + '\\nEle expira em 15 minutos. Se você não solicitou, ignore esta mensagem.'});
+    }
+    return {ok:true, mensagem:'Se o e-mail estiver cadastrado, enviaremos um código de recuperação.'};
+  } finally { lock.releaseLock(); }
 }
 function redefinirSenhaComCodigo(email, codigo, novaSenha) {
-  const e = normalizarEmail_(email), cache = CacheService.getScriptCache(), chave = 'recuperacao:' + e;
-  const salvo = cache.get(chave);
-  if (!salvo || String(codigo || '').trim().toUpperCase() !== salvo) throw new Error('Código inválido ou expirado.');
-  const u = usuarioPorEmail_(e);
-  if (!u) throw new Error('Não foi possível concluir a recuperação.');
-  gravarNovaSenha_(u, novaSenha);
-  cache.remove(chave);
-  return {ok:true, mensagem:'Senha redefinida. Faça login com a nova senha.'};
+  const e = normalizarEmail_(email), cache = CacheService.getScriptCache();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const chave = 'recuperacao:' + e, tentativasKey = 'recuperacao-tentativas:' + e;
+    const salvo = cache.get(chave);
+    if (!salvo) throw new Error('Código inválido ou expirado.');
+    if (String(codigo || '').trim().toUpperCase() !== salvo) {
+      const tentativas = Number(cache.get(tentativasKey) || 0) + 1;
+      cache.put(tentativasKey, String(tentativas), AUTH_CONFIG.RECOVERY_TTL_SECONDS);
+      if (tentativas >= AUTH_CONFIG.RECOVERY_MAX_ATTEMPTS) {
+        cache.remove(chave);
+        cache.remove(tentativasKey);
+      }
+      throw new Error('Código inválido ou expirado.');
+    }
+    const u = usuarioPorEmail_(e);
+    if (!u) throw new Error('Não foi possível concluir a recuperação.');
+    gravarNovaSenha_(u, novaSenha);
+    cache.remove(chave);
+    cache.remove(tentativasKey);
+    return {ok:true, mensagem:'Senha redefinida. Faça login com a nova senha.'};
+  } finally { lock.releaseLock(); }
 }
