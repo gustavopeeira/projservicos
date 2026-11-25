@@ -1,1 +1,2 @@
-# projservicos
+# ProjServiços
+Base modular de agendamentos com Google Sheets + Apps Script. Execute `setupSistema()` na planilha vinculada para criar as 15 abas. Esta é a fundação inicial; autenticação, permissões, validação completa de disponibilidade, recorrência, lista de espera e WhatsApp precisam ser finalizados e testados antes de publicar o site para clientes.

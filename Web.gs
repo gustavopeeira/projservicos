@@ -1,0 +1,1 @@
+function doGet(){setupSistema();return HtmlService.createHtmlOutputFromFile('Index').setTitle(APP_CONFIG.NAME).addMetaTag('viewport','width=device-width, initial-scale=1');} function include(n){return HtmlService.createHtmlOutputFromFile(n).getContent();} function obterDadosIniciais(){return{nome:APP_CONFIG.NAME,funcionarios:listarFuncionarios(),servicos:listarServicos()};}

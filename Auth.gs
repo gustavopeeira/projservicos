@@ -1,0 +1,1 @@
+/** Base de segurança. Implementar sessões, recuperação e autorização por perfil antes da publicação. */ function hashSenha_(senha,salt){if(String(senha||'').length<10)throw Error('Senha deve ter ao menos 10 caracteres.');return Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,String(salt)+String(senha),Utilities.Charset.UTF_8));}

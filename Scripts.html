@@ -1,0 +1,1 @@
+<script>google.script.run.withSuccessHandler(d=>document.getElementById('status').textContent=d.nome+' conectado: '+d.funcionarios.length+' funcionário(s), '+d.servicos.length+' serviço(s).').withFailureHandler(e=>document.getElementById('status').textContent='Erro: '+e.message).obterDadosIniciais();</script>

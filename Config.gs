@@ -1,0 +1,1 @@
+const APP_CONFIG=Object.freeze({NAME:'ProjServiços',VERSION:'0.1.0',TIMEZONE:'America/Campo_Grande'});
