@@ -3,7 +3,7 @@
 ## Configuração
 1. Crie uma planilha Google, abra Extensões → Apps Script e copie os arquivos do projeto.
 2. Execute `setupSistema()` e autorize.
-3. Execute no editor `configurarPrimeiroAdministrador_('email@exemplo.com','Senha-forte-com-10+','Administrador')`.
+3. No editor do Apps Script, execute `criarPrimeiroAdministrador()` e siga as perguntas para cadastrar o primeiro administrador. A senha é informada diretamente na janela do Apps Script e não deve ser compartilhada.
 4. Execute `executarTestesEstruturais()` e confira o relatório no registro de execução.
 5. Entre no painel, cadastre funcionários/serviços e configure os horários de trabalho.
 6. Faça testes com usuários fictícios antes de publicar o aplicativo da web.
