@@ -12,7 +12,7 @@ function obterCatalogoFormulario(token){
     base.cliente={id:String(c.ID),nome:String(c.NOME)};
   }else{
     base.clientes=listarClientes(token);
-    if(u.PERFIL==='ADMINISTRADOR')base.funcionarios=listarFuncionarios();
+    if(u.PERFIL==='ADMINISTRADOR')base.funcionarios=listarFuncionarios(token);
     if(u.PERFIL==='FUNCIONARIO')base.funcionarioId=String(u.REFERENCIA_ID);
   }
   return base;
