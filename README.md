@@ -1,31 +1,22 @@
 # ProjServiços
 
-Sistema modular de agendamentos com Google Sheets + Google Apps Script.
+## Configuração
+1. Crie uma planilha Google, abra Extensões → Apps Script e copie os arquivos.
+2. Execute \`setupSistema()\` e autorize.
+3. Execute no editor \`configurarPrimeiroAdministrador_('email@exemplo.com','Senha-forte-com-10+','Administrador')\`.
+4. Entre no painel, cadastre funcionários/serviços e configure os horários de trabalho.
+5. Faça testes com usuários fictícios antes de publicar o aplicativo da web.
 
-## Preparação
-1. Crie uma planilha Google e abra **Extensões → Apps Script**.
-2. Copie/sincronize os arquivos deste repositório para o projeto vinculado.
-3. Execute `setupSistema()` e autorize o acesso à planilha.
-4. No editor do Apps Script, execute manualmente `configurarPrimeiroAdministrador_('email@exemplo.com', 'uma-senha-forte', 'Administrador')`.
-5. Cadastre funcionários, serviços e seus preços por funcionário no painel administrador.
-6. Crie ou vincule os usuários de funcionário/cliente aos respectivos cadastros antes de liberar o acesso desses perfis.
-7. Implante como aplicativo da web somente depois de testar as contas e permissões.
+## Contas de acesso
+O administrador pode criar usuário vinculado ao cadastro de funcionário ou cliente. Cada conta recebe e-mail e senha inicial definidos no cadastro administrativo; entregue a senha ao titular por canal seguro e oriente a troca após o primeiro acesso. O e-mail de login deve ser único.
 
-## Painéis e formulários
-- Administrador: indicadores, cadastro de funcionários e serviços, clientes, agenda geral e aprovação de solicitações.
-- Funcionário: agenda própria, cadastro de clientes e criação de agendamentos na própria agenda.
-- Cliente: consulta dos próprios agendamentos e solicitação de novo horário.
-- O formulário de agendamento solicita um serviço, profissional (ou seleção automática), data/hora, duração e observações.
-- O preço é recuperado do vínculo serviço/funcionário na planilha, não aceito do navegador.
-- O mesmo telefone não cria um segundo cadastro de cliente.
+## Regras de disponibilidade
+- HORARIOS_FUNCIONARIOS: um registro por faixa de expediente, dia 0=segunda a 6=domingo.
+- INTERVALOS: faixas de pausa por dia, no mesmo padrão.
+- BLOQUEIOS: indisponibilidades com início/fim completos.
+- CONFIG controla ANTECEDENCIA_MINIMA_HORAS e ANTECEDENCIA_MAXIMA_DIAS.
+- A criação exige que o horário inteiro caiba em uma faixa de expediente, não cruze intervalo, bloqueio nem outro agendamento ativo.
+- O teste de conflito é protegido por LockService para reduzir colisões simultâneas.
 
-## Regras implementadas nesta etapa
-- Agendamentos precisam ser futuros, com duração entre 5 e 720 minutos.
-- O profissional precisa estar ativo e vinculado ao serviço.
-- A criação verifica sobreposição com outros agendamentos ativos do profissional.
-- Solicitações começam com status AGUARDANDO_APROVACAO.
-- O cliente só pode agendar para o próprio cadastro; funcionário só agenda na própria agenda.
-- O funcionário pode confirmar/recusar apenas agendamentos associados a ele.
-
-## Limitações importantes
-A verificação de conflito considera os agendamentos existentes, mas ainda não valida horários semanais, intervalos, bloqueios, antecedência mínima/máxima, recorrência ou lista de espera. A seleção automática escolhe o primeiro profissional vinculado que não tenha conflito no período. Cadastro de funcionário/cliente ainda não cria automaticamente usuário e senha; o administrador deve criar e vincular os acessos separadamente. Não use dados reais nem publique para clientes antes de testar permissões e regras de agenda de ponta a ponta.
+## Segurança e limites
+Clientes só podem criar agendamentos para o próprio cadastro; funcionários ficam limitados à própria agenda; administração cria e vincula contas. O backend é a autoridade para preços e permissões. Ainda é necessário testar em cópia da planilha, revisar permissões de implantação, proteção contra abuso de recuperação de senha, backups e requisitos legais de privacidade. O hash atual de senha deve ser auditado antes de produção; a implementação não substitui revisão de segurança profissional.
