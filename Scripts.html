@@ -1,1 +1,15 @@
-<script>google.script.run.withSuccessHandler(d=>document.getElementById('status').textContent=d.nome+' conectado: '+d.funcionarios.length+' funcionário(s), '+d.servicos.length+' serviço(s).').withFailureHandler(e=>document.getElementById('status').textContent='Erro: '+e.message).obterDadosIniciais();</script>
+<script>
+const $=id=>document.getElementById(id);
+let token=sessionStorage.getItem('projservicos_token')||'';
+function feedback(msg){$('feedback').textContent=msg||''}
+function callServer(fn,...args){return new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(new Error(e.message||'Falha na operação.')))[fn](...args))}
+function show(view){['loginView','recoveryView','accountView'].forEach(id=>$(id).classList.toggle('hidden',id!==view));feedback('')}
+function showAccount(user){$('accountInfo').textContent=user.nome+' • '+user.perfil.toLowerCase();show('accountView')}
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();feedback('Verificando acesso...');try{const r=await callServer('entrar',$('email').value,$('senha').value);token=r.token;sessionStorage.setItem('projservicos_token',token);showAccount(r.usuario)}catch(err){feedback(err.message)}});
+$('showRecovery').onclick=()=>{show('recoveryView');$('requestForm').classList.remove('hidden');$('resetForm').classList.add('hidden')};
+$('backLogin').onclick=()=>show('loginView');
+$('requestForm').addEventListener('submit',async e=>{e.preventDefault();try{const r=await callServer('solicitarRecuperacaoSenha',$('recoveryEmail').value);feedback(r.mensagem);$('requestForm').classList.add('hidden');$('resetForm').classList.remove('hidden')}catch(err){feedback(err.message)}});
+$('resetForm').addEventListener('submit',async e=>{e.preventDefault();try{const r=await callServer('redefinirSenhaComCodigo',$('recoveryEmail').value,$('code').value,$('newPassword').value);feedback(r.mensagem);$('resetForm').classList.add('hidden');setTimeout(()=>show('loginView'),1800)}catch(err){feedback(err.message)}});
+$('logout').onclick=async()=>{try{await callServer('sair',token)}catch(e){}token='';sessionStorage.removeItem('projservicos_token');show('loginView')};
+(async()=>{if(token){try{showAccount(await callServer('obterSessao',token))}catch(e){token='';sessionStorage.removeItem('projservicos_token');show('loginView')}}else show('loginView')})();
+</script>

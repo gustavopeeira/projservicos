@@ -1,1 +1,22 @@
-<!doctype html><html lang="pt-BR"><head><base target="_top"><?!= include('Styles'); ?></head><body><main><header><small>AGENDA INTELIGENTE</small><h1>ProjServiços</h1></header><section><h2>Organize seus agendamentos</h2><p>Estrutura inicial conectada ao Google Sheets.</p><div id="status">Conectando...</div></section><section class="grid"><article>Clientes</article><article>Funcionários</article><article>Serviços</article><article>Agenda</article></section></main><?!= include('Scripts'); ?></body></html>
+<!doctype html>
+<html lang="pt-BR"><head><base target="_top"><?!= include('Styles'); ?></head>
+<body><main class="shell">
+  <header><small>AGENDA INTELIGENTE</small><h1>ProjServiços</h1><p>Agendamentos organizados em um só lugar.</p></header>
+  <section id="loginView" class="panel">
+    <h2>Entrar</h2>
+    <form id="loginForm"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required>
+      <label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password" required>
+      <button type="submit">Entrar</button></form>
+    <button class="link" id="showRecovery" type="button">Esqueci minha senha</button>
+  </section>
+  <section id="recoveryView" class="panel hidden">
+    <h2>Recuperar senha</h2><p>Informe seu e-mail para receber um código válido por 15 minutos.</p>
+    <form id="requestForm"><label for="recoveryEmail">E-mail</label><input id="recoveryEmail" type="email" required><button type="submit">Enviar código</button></form>
+    <form id="resetForm" class="hidden"><label for="code">Código recebido</label><input id="code" autocomplete="one-time-code" required maxlength="8">
+      <label for="newPassword">Nova senha (mínimo 10 caracteres)</label><input id="newPassword" type="password" minlength="10" required>
+      <button type="submit">Redefinir senha</button></form>
+    <button class="link" id="backLogin" type="button">Voltar ao login</button>
+  </section>
+  <section id="accountView" class="panel hidden"><h2>Bem-vindo(a)!</h2><p id="accountInfo"></p><button id="logout" type="button">Sair</button></section>
+  <p id="feedback" role="status" aria-live="polite"></p>
+</main><?!= include('Scripts'); ?></body></html>

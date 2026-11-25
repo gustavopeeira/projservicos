@@ -4,18 +4,17 @@ Sistema modular de agendamentos com Google Sheets + Google Apps Script.
 
 ## Preparação
 1. Crie uma planilha Google e abra **Extensões → Apps Script**.
-2. Copie os arquivos deste repositório para o projeto vinculado.
+2. Copie/sincronize os arquivos deste repositório para o projeto vinculado.
 3. Execute `setupSistema()` e autorize o acesso à planilha.
 4. No editor do Apps Script, execute manualmente `configurarPrimeiroAdministrador_('email@exemplo.com', 'uma-senha-forte', 'Administrador')`. A função termina em underscore para não ficar acessível pelo navegador.
-5. Faça login pela função de servidor `entrar(email, senha)`. Guarde o token retornado no cliente e envie-o como último argumento em cada operação protegida.
-6. Publique somente depois de criar a interface de login e testar as permissões com contas de cada perfil.
+5. Implante como aplicativo da web somente após testar as contas e permissões.
 
-## Perfis
-- **ADMINISTRADOR:** gerencia cadastros, usuários, agenda e relatórios.
-- **FUNCIONARIO:** consulta sua própria agenda e realiza operações permitidas para equipe.
-- **CLIENTE:** cria agendamentos apenas para o próprio cadastro e consulta somente os próprios agendamentos.
+## Acesso
+- Login por e-mail e senha.
+- Sessões armazenadas em cache por até 6 horas e encerradas ao sair.
+- Recuperação por código enviado ao e-mail cadastrado; código válido por 15 minutos.
+- Senhas exigem 10 a 128 caracteres e são armazenadas como hash com salt individual.
+- Perfis: ADMINISTRADOR, FUNCIONARIO e CLIENTE.
 
-As operações protegidas recebem o token de sessão explicitamente. Sessões expiram após 6 horas; sair invalida o token. Senhas são derivadas com HMAC-SHA-256 iterado e salt individual. A senha nunca é devolvida ao navegador.
-
-## Limitações desta etapa
-A autenticação e as verificações de perfil estão implementadas no servidor, mas ainda faltam a interface de login, recuperação de senha, testes automatizados no Apps Script e revisão de segurança antes de disponibilizar o sistema ao público. A sessão em cache pode expirar antes do prazo nominal. Não use dados reais de clientes até concluir os testes.
+## Limitações e segurança
+A tela de login e a recuperação por e-mail estão implementadas. A área autenticada ainda é apenas uma confirmação de sessão; os painéis completos de administração, equipe e cliente serão desenvolvidos em etapas posteriores. A recuperação depende da autorização do serviço MailApp no Apps Script e de uma conta Google com envio disponível. Cache pode expirar antes do prazo nominal. Não use dados reais nem publique para clientes antes de testar o fluxo e revisar as operações protegidas.
