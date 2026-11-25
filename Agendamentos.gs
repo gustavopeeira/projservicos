@@ -11,6 +11,8 @@ function criarAgendamento(d,token){
   const inicio=Utilities.parseDate(String(d.INICIO||''),APP_CONFIG.TIMEZONE,"yyyy-MM-dd'T'HH:mm");
   if(!(inicio instanceof Date)||isNaN(inicio.getTime()))throw Error('Data e horário inválidos.');
   if(inicio.getTime()<Date.now())throw Error('Escolha uma data futura.');
+  const lock=LockService.getScriptLock();lock.waitLock(10000);
+  try{
   const vinculacoes=records_('FUNCIONARIO_SERVICOS').filter(x=>String(x.SERVICO_ID)===String(d.SERVICO_ID)&&String(x.ATIVO).toUpperCase()!=='FALSE');
   const funcionarios=records_('FUNCIONARIOS').filter(x=>String(x.ATIVO).toUpperCase()!=='FALSE');
   let candidatos=vinculacoes.filter(v=>funcionarios.some(f=>String(f.ID)===String(v.FUNCIONARIO_ID)));
@@ -29,8 +31,6 @@ function criarAgendamento(d,token){
   if(!escolhido)throw Error('Este horário já está ocupado para os funcionários disponíveis. Escolha outro horário ou profissional.');
   const preco=Number(escolhido.PRECO);
   if(!isFinite(preco)||preco<0)throw Error('O preço cadastrado para este serviço está inválido.');
-  const lock=LockService.getScriptLock();lock.waitLock(10000);
-  try{
     const r={ID:id_('AGD'),CLIENTE_ID:String(d.CLIENTE_ID),INICIO:inicio,FIM:fim,STATUS:'AGUARDANDO_APROVACAO',RECORRENCIA_ID:'',RECORRENCIA_TIPO:'',OBSERVACOES:String(d.OBSERVACOES||'').trim(),CRIADO_POR:u.ID,CRIADO_EM:new Date(),ATUALIZADO_EM:new Date()};
     sheet_('AGENDAMENTOS').appendRow(SHEET_SCHEMAS.AGENDAMENTOS.map(k=>r[k]??''));
     const x={ID:id_('ITA'),AGENDAMENTO_ID:r.ID,SERVICO_ID:String(servico.ID),FUNCIONARIO_ID:String(escolhido.FUNCIONARIO_ID),DURACAO_MINUTOS:duracao,PRECO_BASE:preco,DESCONTO_TIPO:'',DESCONTO_VALOR:0,PRECO_FINAL:preco,ORDEM:1};
