@@ -91,7 +91,7 @@ function usuarioDaSessao_(token) {
   return u;
 }
 function exigirPerfil_(perfis, token) {
-  const u = usuarioDaSessao_(token || obterTokenContexto_());
+  const u = usuarioDaSessao_(token);
   if (!perfis.includes(String(u.PERFIL).toUpperCase())) throw new Error('Você não tem permissão para esta operação.');
   return u;
 }
@@ -103,7 +103,7 @@ function alterarMinhaSenha(token, senhaAtual, senhaNova) {
   if (atual !== String(u.SENHA_HASH)) throw new Error('Senha atual incorreta.');
   const salt = gerarSalt_(), hash = derivarSenha_(nova, salt), row = localizarLinha_('USUARIOS','ID',u.ID);
   const s = sheet_('USUARIOS');
-  s.getRange(row, SHEET_SCHEMAS.USUARIOS.indexOf('SENHA_SALT')+1,1,2).setValues([[salt,hash]]);
+  s.getRange(row, SHEET_SCHEMAS.USUARIOS.indexOf('SENHA_SALT')+1).setValue(salt);\n  s.getRange(row, SHEET_SCHEMAS.USUARIOS.indexOf('SENHA_HASH')+1).setValue(hash);
   CacheService.getScriptCache().remove('sessao:' + token);
   return { ok:true, mensagem:'Senha alterada. Entre novamente.' };
 }
