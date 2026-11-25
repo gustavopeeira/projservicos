@@ -21,11 +21,7 @@ function obterDadosPainel(token){
   const u=usuarioDaSessao_(token),agora=new Date(),limite=new Date(agora.getTime()+31*86400000);
   let ags=records_('AGENDAMENTOS').filter(a=>new Date(a.FIM)>=agora&&new Date(a.INICIO)<=limite);
   const itens=records_('ITENS_AGENDAMENTO'),clientes=records_('CLIENTES'),funcionarios=records_('FUNCIONARIOS'),servicos=records_('SERVICOS');
-  if(u.PERFIL==='CLIENTE')ags=ags.filter(a=>String(a.CLIENTE_ID)===String(u.REFERENCIA_ID));
-  if(u.PERFIL==='FUNCIONARIO'){
-    const ids=itens.filter(i=>String(i.FUNCIONARIO_ID)===String(u.REFERENCIA_ID)).map(i=>String(i.AGENDAMENTO_ID));
-    ags=ags.filter(a=>ids.includes(String(a.ID)));
-  }
+  ags=filtrarAgendamentosPorUsuario_(ags,itens,u);
   ags.sort((a,b)=>new Date(a.INICIO)-new Date(b.INICIO));
   const agenda=ags.map(a=>{
     const its=itens.filter(i=>String(i.AGENDAMENTO_ID)===String(a.ID));
@@ -46,7 +42,7 @@ function atualizarStatusAgendamento(id,status,token){
     const a=records_('AGENDAMENTOS').find(x=>String(x.ID)===String(id));
     if(!a)throw Error('Agendamento não encontrado.');
     if(String(a.STATUS)!=='AGUARDANDO_APROVACAO')throw Error('Este agendamento já foi processado.');
-    if(u.PERFIL==='FUNCIONARIO'&&!records_('ITENS_AGENDAMENTO').some(i=>String(i.AGENDAMENTO_ID)===String(id)&&String(i.FUNCIONARIO_ID)===String(u.REFERENCIA_ID)))throw Error('Você só pode aprovar agendamentos da sua agenda.');
+    if(!podeGerenciarAgendamento_(id,records_('ITENS_AGENDAMENTO'),u))throw Error('Você só pode aprovar agendamentos da sua agenda.');
     const sh=sheet_('AGENDAMENTOS'),row=localizarLinha_('AGENDAMENTOS','ID',id),headers=SHEET_SCHEMAS.AGENDAMENTOS;
     sh.getRange(row,headers.indexOf('STATUS')+1).setValue(novo);
     sh.getRange(row,headers.indexOf('ATUALIZADO_EM')+1).setValue(new Date());

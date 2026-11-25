@@ -1,3 +1,33 @@
+/**
+ * Regras de escopo compartilhadas pelas consultas e ações de agenda.
+ * Recebe arrays já carregados do banco; não faz I/O.
+ */
+function filtrarAgendamentosPorUsuario_(rows, itens, usuario, funcionarioFiltro) {
+  const perfil = String(usuario && usuario.PERFIL || '').toUpperCase();
+  const referencia = String(usuario && usuario.REFERENCIA_ID || '');
+  if (perfil === 'CLIENTE') return rows.filter(r => String(r.CLIENTE_ID) === referencia);
+  if (perfil === 'FUNCIONARIO') {
+    const ids = itens.filter(i => String(i.FUNCIONARIO_ID) === referencia).map(i => String(i.AGENDAMENTO_ID));
+    return rows.filter(r => ids.includes(String(r.ID)));
+  }
+  if (perfil === 'ADMINISTRADOR') {
+    if (!funcionarioFiltro) return rows;
+    const ids = itens.filter(i => String(i.FUNCIONARIO_ID) === String(funcionarioFiltro)).map(i => String(i.AGENDAMENTO_ID));
+    return rows.filter(r => ids.includes(String(r.ID)));
+  }
+  throw new Error('Perfil sem acesso à agenda.');
+}
+function podeGerenciarAgendamento_(agendamentoId, itens, usuario) {
+  const perfil = String(usuario && usuario.PERFIL || '').toUpperCase();
+  if (perfil === 'ADMINISTRADOR') return true;
+  if (perfil !== 'FUNCIONARIO') return false;
+  return itens.some(i => String(i.AGENDAMENTO_ID) === String(agendamentoId) && String(i.FUNCIONARIO_ID) === String(usuario.REFERENCIA_ID));
+}
+function idsClientesVisiveisFuncionario_(funcionarioId, agendamentos, itens) {
+  const agIds = itens.filter(i => String(i.FUNCIONARIO_ID) === String(funcionarioId)).map(i => String(i.AGENDAMENTO_ID));
+  return [...new Set(agendamentos.filter(a => agIds.includes(String(a.ID))).map(a => String(a.CLIENTE_ID)))];
+}
+
 function configValor_(chave,padrao){
   const r=records_('CONFIG').find(x=>String(x.CHAVE)===chave);
   return r?String(r.VALOR):String(padrao);
@@ -55,9 +85,7 @@ function salvarBloqueioFuncionario(d,token){
 function consultarAgenda(inicio,fim,funcId,token){
   const u=exigirPerfil_(['ADMINISTRADOR','FUNCIONARIO','CLIENTE'],token),a=new Date(inicio),b=new Date(fim);
   if(isNaN(a)||isNaN(b)||b<=a)throw Error('Período inválido.');
-  let rows=records_('AGENDAMENTOS').filter(r=>new Date(r.INICIO)<b&&new Date(r.FIM)>a);
-  if(u.PERFIL==='CLIENTE')rows=rows.filter(r=>String(r.CLIENTE_ID)===String(u.REFERENCIA_ID));
-  if(u.PERFIL==='FUNCIONARIO'){const ids=records_('ITENS_AGENDAMENTO').filter(i=>String(i.FUNCIONARIO_ID)===String(u.REFERENCIA_ID)).map(i=>String(i.AGENDAMENTO_ID));rows=rows.filter(r=>ids.includes(String(r.ID)));}
-  if(funcId&&u.PERFIL==='ADMINISTRADOR'){const ids=records_('ITENS_AGENDAMENTO').filter(i=>String(i.FUNCIONARIO_ID)===String(funcId)).map(i=>String(i.AGENDAMENTO_ID));rows=rows.filter(r=>ids.includes(String(r.ID)));}
-  return rows;
+  const rows=records_('AGENDAMENTOS').filter(r=>new Date(r.INICIO)<b&&new Date(r.FIM)>a);
+  const itens=records_('ITENS_AGENDAMENTO');
+  return filtrarAgendamentosPorUsuario_(rows,itens,u,funcId);
 }

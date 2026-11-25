@@ -1,6 +1,11 @@
 function listarClientes(token){
-  exigirPerfil_(['ADMINISTRADOR','FUNCIONARIO'],token);
-  return records_('CLIENTES').filter(r=>String(r.ATIVO).toUpperCase()!=='FALSE').map(r=>({ID:String(r.ID),NOME:String(r.NOME),TELEFONE:String(r.TELEFONE||''),EMAIL:String(r.EMAIL||'')}));
+  const u=exigirPerfil_(['ADMINISTRADOR','FUNCIONARIO'],token);
+  let clientes=records_('CLIENTES').filter(r=>String(r.ATIVO).toUpperCase()!=='FALSE');
+  if(u.PERFIL==='FUNCIONARIO'){
+    const visiveis=idsClientesVisiveisFuncionario_(u.REFERENCIA_ID,records_('AGENDAMENTOS'),records_('ITENS_AGENDAMENTO'));
+    clientes=clientes.filter(c=>visiveis.includes(String(c.ID)));
+  }
+  return clientes.map(r=>({ID:String(r.ID),NOME:String(r.NOME),TELEFONE:String(r.TELEFONE||''),EMAIL:String(r.EMAIL||'')}));
 }
 function salvarCliente(d,token){
   exigirPerfil_(['ADMINISTRADOR','FUNCIONARIO'],token);
