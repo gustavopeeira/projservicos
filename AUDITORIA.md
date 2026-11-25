@@ -43,3 +43,11 @@ WhatsApp, recorrência, lista de espera, cancelamento/remarcação do cliente, p
 - Limitação: consultarAgenda retorna os registros completos da aba AGENDAMENTOS dentro do escopo autorizado; considerar DTO explícito com campos permitidos.
 - O sufixo _ é convenção do Apps Script para impedir chamadas diretas via google.script.run; a segurança também depende de validações no servidor.
 - Revisão estática, sem testes de isolamento no runtime Apps Script.
+
+
+## Testes de permissão adicionados — 2026-11-25
+- Criado `TestesPermissoes.gs` com nove casos unitários usando apenas dados fictícios em memória.
+- As regras compartilhadas de escopo foram extraídas para `filtrarAgendamentosPorUsuario_` e são usadas pela consulta de agenda e pelo painel.
+- Funcionários agora recebem na listagem somente clientes associados a agendamentos atribuídos ao próprio funcionário.
+- A autorização para confirmar/rejeitar foi centralizada em `podeGerenciarAgendamento_`; cliente não tem permissão e funcionário só pode gerir itens da própria agenda.
+- Revisão do código e conferência dos arquivos no GitHub concluídas. Os nove casos ainda precisam ser executados no Apps Script; não há runtime Google Sheets disponível nesta sessão.

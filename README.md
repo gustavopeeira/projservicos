@@ -32,3 +32,7 @@ Ainda faltam testes de ponta a ponta para login, permissões, criação/aprovaç
 - Recorrência, lista de espera, remarcação/cancelamento pelo cliente, pagamentos/descontos e navegação completa do calendário ainda não estão concluídos.
 - Notificações e relatórios precisam de validação funcional.
 - Não publique em produção antes dos testes e da revisão de segurança.
+
+
+### Testes de permissões
+Execute `executarTestesPermissoes()` para validar as regras de escopo com dados fictícios em memória. Esse teste não cria nem altera registros na planilha. Ele verifica o isolamento de agenda de clientes e funcionários, o filtro administrativo, a lista de clientes visível ao funcionário e as permissões de aprovação.
