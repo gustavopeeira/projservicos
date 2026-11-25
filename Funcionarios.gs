@@ -1,2 +1,2 @@
-function listarFuncionarios(){return records_('FUNCIONARIOS').filter(r=>String(r.ATIVO).toUpperCase()!=='FALSE');}
+function listarFuncionarios(){return records_('FUNCIONARIOS').filter(r=>String(r.ATIVO).toUpperCase()!=='FALSE').map(r=>({ID:r.ID,NOME:r.NOME,ESPECIALIDADES:r.ESPECIALIDADES||''}));}
 function salvarFuncionario(d,token){exigirPerfil_(['ADMINISTRADOR'],token);if(!d||!String(d.NOME||'').trim())throw Error('Informe o nome.');const r={ID:id_('FUN'),NOME:String(d.NOME).trim(),TELEFONE:d.TELEFONE||'',EMAIL:d.EMAIL||'',ESPECIALIDADES:d.ESPECIALIDADES||'',ATIVO:true,CRIADO_EM:new Date()};sheet_('FUNCIONARIOS').appendRow(SHEET_SCHEMAS.FUNCIONARIOS.map(k=>r[k]??''));return{id:r.ID};}
