@@ -314,6 +314,43 @@ function redefinirSenhaComCodigo(email, codigo, novaSenha) {
 }
 
 
+/**
+ * Assistente de criação da primeira conta administrativa.
+ * Execute pelo editor do Apps Script, nunca pela interface pública.
+ * Só funciona enquanto não existir nenhum administrador.
+ */
+function criarPrimeiroAdministrador() {
+  const ui = SpreadsheetApp.getUi();
+
+  if (records_('USUARIOS').some(function (u) {
+    return String(u.PERFIL || '').toUpperCase() === 'ADMINISTRADOR';
+  })) {
+    ui.alert('Já existe um administrador cadastrado. Nenhuma alteração foi feita.');
+    return;
+  }
+
+  const nome = ui.prompt('Primeiro administrador', 'Digite o nome de exibição:', ui.ButtonSet.OK_CANCEL);
+  if (nome.getSelectedButton() !== ui.Button.OK) return;
+
+  const email = ui.prompt('Primeiro administrador', 'Digite o e-mail de acesso:', ui.ButtonSet.OK_CANCEL);
+  if (email.getSelectedButton() !== ui.Button.OK) return;
+
+  const senha = ui.prompt('Primeiro administrador', 'Crie uma senha com pelo menos 10 caracteres:', ui.ButtonSet.OK_CANCEL);
+  if (senha.getSelectedButton() !== ui.Button.OK) return;
+
+  try {
+    const resultado = configurarPrimeiroAdministrador_(
+      email.getResponseText(),
+      senha.getResponseText(),
+      nome.getResponseText()
+    );
+    ui.alert('Administrador cadastrado: ' + resultado.email);
+  } catch (erro) {
+    ui.alert('Não foi possível criar o administrador: ' + String(erro.message || erro));
+  }
+}
+
+
 /************************************************************
  * ARQUIVO ORIGINAL: Clientes.gs
  ************************************************************/
@@ -697,5 +734,21 @@ function executarTestesPermissoes() {
  * ARQUIVO ORIGINAL: Web.gs
  ************************************************************/
 
-function doGet(){setupSistema();return HtmlService.createHtmlOutputFromFile('Index').setTitle(APP_CONFIG.NAME).addMetaTag('viewport','width=device-width, initial-scale=1');}
-function include(n){return HtmlService.createHtmlOutputFromFile(n).getContent();}
+/**
+ * Entrada do aplicativo Web.
+ * Usa template para processar as inclusões <?!= include('...') ?> do HTML.
+ */
+function doGet() {
+  setupSistema();
+  return HtmlService.createTemplateFromFile('Index')
+    .evaluate()
+    .setTitle(APP_CONFIG.NAME)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/**
+ * Inclui arquivos HTML parciais, como Styles e Scripts.
+ */
+function include(nome) {
+  return HtmlService.createHtmlOutputFromFile(nome).getContent();
+}
