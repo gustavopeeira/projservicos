@@ -3,20 +3,21 @@
 <body><main class="shell">
   <header><small>AGENDA INTELIGENTE</small><h1>ProjServiços</h1><p>Agendamentos organizados em um só lugar.</p></header>
   <section id="loginView" class="panel">
-    <h2>Entrar</h2>
-    <form id="loginForm"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required>
-      <label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password" required>
-      <button type="submit">Entrar</button></form>
+    <h2>Entrar</h2><form id="loginForm"><label for="email">E-mail</label><input id="email" type="email" autocomplete="username" required>
+      <label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password" required><button type="submit">Entrar</button></form>
     <button class="link" id="showRecovery" type="button">Esqueci minha senha</button>
   </section>
-  <section id="recoveryView" class="panel hidden">
-    <h2>Recuperar senha</h2><p>Informe seu e-mail para receber um código válido por 15 minutos.</p>
+  <section id="recoveryView" class="panel hidden"><h2>Recuperar senha</h2><p>Informe seu e-mail para receber um código válido por 15 minutos.</p>
     <form id="requestForm"><label for="recoveryEmail">E-mail</label><input id="recoveryEmail" type="email" required><button type="submit">Enviar código</button></form>
     <form id="resetForm" class="hidden"><label for="code">Código recebido</label><input id="code" autocomplete="one-time-code" required maxlength="8">
-      <label for="newPassword">Nova senha (mínimo 10 caracteres)</label><input id="newPassword" type="password" minlength="10" required>
-      <button type="submit">Redefinir senha</button></form>
+      <label for="newPassword">Nova senha (mínimo 10 caracteres)</label><input id="newPassword" type="password" minlength="10" required><button type="submit">Redefinir senha</button></form>
     <button class="link" id="backLogin" type="button">Voltar ao login</button>
   </section>
-  <section id="accountView" class="panel hidden"><h2>Bem-vindo(a)!</h2><p id="accountInfo"></p><button id="logout" type="button">Sair</button></section>
+  <section id="dashboardView" class="hidden">
+    <div class="welcome"><div><small id="roleLabel"></small><h2 id="welcomeName">Painel</h2></div><button id="logout" class="secondary">Sair</button></div>
+    <div id="metrics" class="metrics"></div>
+    <section class="panel"><div class="sectionHead"><h3 id="agendaTitle">Próximos agendamentos</h3><button id="refresh" class="secondary smallButton">Atualizar</button></div><div id="agendaList"></div></section>
+    <p class="hint">Exibindo os próximos 31 dias. Informações e ações variam conforme seu perfil.</p>
+  </section>
   <p id="feedback" role="status" aria-live="polite"></p>
 </main><?!= include('Scripts'); ?></body></html>

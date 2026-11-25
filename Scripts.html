@@ -1,15 +1,38 @@
 <script>
-const $=id=>document.getElementById(id);
-let token=sessionStorage.getItem('projservicos_token')||'';
+const $=id=>document.getElementById(id);let token=sessionStorage.getItem('projservicos_token')||'',currentUser=null;
 function feedback(msg){$('feedback').textContent=msg||''}
 function callServer(fn,...args){return new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(new Error(e.message||'Falha na operação.')))[fn](...args))}
-function show(view){['loginView','recoveryView','accountView'].forEach(id=>$(id).classList.toggle('hidden',id!==view));feedback('')}
-function showAccount(user){$('accountInfo').textContent=user.nome+' • '+user.perfil.toLowerCase();show('accountView')}
-$('loginForm').addEventListener('submit',async e=>{e.preventDefault();feedback('Verificando acesso...');try{const r=await callServer('entrar',$('email').value,$('senha').value);token=r.token;sessionStorage.setItem('projservicos_token',token);showAccount(r.usuario)}catch(err){feedback(err.message)}});
-$('showRecovery').onclick=()=>{show('recoveryView');$('requestForm').classList.remove('hidden');$('resetForm').classList.add('hidden')};
-$('backLogin').onclick=()=>show('loginView');
+function show(view){['loginView','recoveryView','dashboardView'].forEach(id=>$(id).classList.toggle('hidden',id!==view));feedback('')}
+function money(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function dateTime(v){return new Date(v).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}
+function metric(label,value){return '<div class="metric"><span>'+label+'</span><strong>'+value+'</strong></div>'}
+function renderDashboard(data){
+ currentUser=data.usuario;$('welcomeName').textContent='Olá, '+(currentUser.nome||'usuário');$('roleLabel').textContent=({ADMINISTRADOR:'ADMINISTRAÇÃO',FUNCIONARIO:'ÁREA DO FUNCIONÁRIO',CLIENTE:'ÁREA DO CLIENTE'})[currentUser.perfil]||'PAINEL';
+ const m=$('metrics');m.innerHTML='';
+ if(data.resumo){const r=data.resumo;m.innerHTML=metric('Agendamentos',r.agendamentos)+metric('Confirmados',r.confirmados)+metric('Clientes',r.clientes)+metric('Funcionários',r.funcionarios)+metric('Serviços ativos',r.servicos)+metric('Faturamento previsto',money(r.faturamentoPrevisto))}
+ else {m.innerHTML=metric('Próximos atendimentos',data.agenda.length)+metric('Pendentes',data.agenda.filter(a=>a.status==='AGUARDANDO_APROVACAO').length)}
+ $('agendaTitle').textContent=currentUser.perfil==='CLIENTE'?'Meus agendamentos':'Próximos agendamentos';
+ const list=$('agendaList');list.innerHTML='';
+ if(!data.agenda.length){list.innerHTML='<div class="empty">Nenhum agendamento nos próximos 31 dias.</div>'}
+ data.agenda.forEach(a=>{
+  const item=document.createElement('article');item.className='appointment';
+  const title=document.createElement('h4');title.textContent=dateTime(a.inicio)+' — '+a.servicos;item.appendChild(title);
+  const info=document.createElement('p');info.textContent=(a.cliente?'Cliente: '+a.cliente+' • ':'')+(a.funcionarios?'Funcionário: '+a.funcionarios+' • ':'')+'Até '+dateTime(a.fim);item.appendChild(info);
+  const st=document.createElement('span');st.className='status';st.textContent=a.status.replaceAll('_',' ');item.appendChild(st);
+  if(['ADMINISTRADOR','FUNCIONARIO'].includes(currentUser.perfil)&&a.status==='AGUARDANDO_APROVACAO'){
+   const actions=document.createElement('div');actions.className='actions';
+   [['Confirmar','CONFIRMADO','approve'],['Recusar','RECUSADO','reject']].forEach(([label,status,cls])=>{const btn=document.createElement('button');btn.textContent=label;btn.className=cls;btn.onclick=()=>changeStatus(a.id,status);actions.appendChild(btn)});item.appendChild(actions)
+  }
+  list.appendChild(item)
+ });show('dashboardView')
+}
+async function loadDashboard(){feedback('Carregando painel...');try{renderDashboard(await callServer('obterDadosPainel',token));feedback('')}catch(e){feedback(e.message);if(/sessão|inválida|expirada/i.test(e.message))logout()}}
+async function changeStatus(id,status){if(!confirm(status==='CONFIRMADO'?'Confirmar este agendamento?':'Recusar este agendamento?'))return;try{await callServer('atualizarStatusAgendamento',id,status,token);await loadDashboard()}catch(e){feedback(e.message)}}
+function logout(){token='';currentUser=null;sessionStorage.removeItem('projservicos_token');show('loginView')}
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();feedback('Verificando acesso...');try{const r=await callServer('entrar',$('email').value,$('senha').value);token=r.token;sessionStorage.setItem('projservicos_token',token);await loadDashboard()}catch(err){feedback(err.message)}});
+$('showRecovery').onclick=()=>{show('recoveryView');$('requestForm').classList.remove('hidden');$('resetForm').classList.add('hidden')};$('backLogin').onclick=()=>show('loginView');
 $('requestForm').addEventListener('submit',async e=>{e.preventDefault();try{const r=await callServer('solicitarRecuperacaoSenha',$('recoveryEmail').value);feedback(r.mensagem);$('requestForm').classList.add('hidden');$('resetForm').classList.remove('hidden')}catch(err){feedback(err.message)}});
-$('resetForm').addEventListener('submit',async e=>{e.preventDefault();try{const r=await callServer('redefinirSenhaComCodigo',$('recoveryEmail').value,$('code').value,$('newPassword').value);feedback(r.mensagem);$('resetForm').classList.add('hidden');setTimeout(()=>show('loginView'),1800)}catch(err){feedback(err.message)}});
-$('logout').onclick=async()=>{try{await callServer('sair',token)}catch(e){}token='';sessionStorage.removeItem('projservicos_token');show('loginView')};
-(async()=>{if(token){try{showAccount(await callServer('obterSessao',token))}catch(e){token='';sessionStorage.removeItem('projservicos_token');show('loginView')}}else show('loginView')})();
+$('resetForm').addEventListener('submit',async e=>{e.preventDefault();try{const r=await callServer('redefinirSenhaComCodigo',$('recoveryEmail').value,$('code').value,$('newPassword').value);feedback(r.mensagem);$('resetForm').classList.add('hidden')}catch(err){feedback(err.message)}});
+$('logout').onclick=logout;$('refresh').onclick=loadDashboard;
+(async()=>{if(token)await loadDashboard();else show('loginView')})();
 </script>
