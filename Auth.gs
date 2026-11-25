@@ -38,8 +38,8 @@ function configurarPrimeiroAdministrador_(email, senha, nome) {
   sheet_('USUARIOS').appendRow(SHEET_SCHEMAS.USUARIOS.map(k => u[k] ?? ''));
   return { ok:true, email:e };
 }
-function criarUsuario(d) {
-  exigirPerfil_(['ADMINISTRADOR']);
+function criarUsuario(d, token) {
+  exigirPerfil_(['ADMINISTRADOR'], token);
   if (!d || !['ADMINISTRADOR','FUNCIONARIO','CLIENTE'].includes(String(d.PERFIL).toUpperCase())) throw new Error('Perfil inválido.');
   const email = normalizarEmail_(d.EMAIL);
   if (usuarioPorEmail_(email)) throw new Error('Este e-mail já possui acesso.');
