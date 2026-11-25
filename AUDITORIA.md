@@ -1,6 +1,6 @@
 # Revisão técnica — ProjServiços
 
-Data: 2026-11-25
+Data: 2026-11-25 (revisão incremental)
 Branch: feature/estrutura-inicial
 
 ## Escopo revisado
@@ -16,11 +16,11 @@ Leitura estática dos arquivos Apps Script e da interface disponíveis na branch
 - Recuperação não informa se o e-mail existe.
 
 ## Riscos e correções necessárias antes de produção
-1. **Recuperação de senha:** há limite de solicitação por endereço, mas não há limite de tentativas de validação do código nem limitação global suficiente contra abuso de envio.
+1. **Recuperação de senha — mitigação adicionada:** limite de uma solicitação por e-mail por minuto, limite global simples de 20 solicitações por minuto e bloqueio do código após cinco tentativas inválidas. Ainda requer teste no Apps Script e avaliação de abuso distribuído.
 2. **Bootstrap administrativo:** configurar o primeiro administrador é função privada por convenção de nome; garantir que nunca seja chamada por uma função pública do HTML.
 3. **Cabeçalhos de planilha:** setupSistema adiciona cabeçalhos ausentes ao final. Se uma planilha preexistente tiver colunas fora de ordem, o código que usa índices fixos pode ler/gravar campos incorretos. Usar planilha nova ou corrigir setup para validar/migrar por nome.
 4. **Cadastros compostos:** funcionário/cliente e usuário são gravados em operações separadas. Falhas inesperadas entre as gravações podem deixar cadastro parcial; implementar compensação ou escrita transacional lógica.
-5. **Concorrência:** LockService protege agendamento, mas não todos os cadastros e vínculos únicos. Aplicar bloqueio em operações de criação de usuários e vínculos.
+5. **Concorrência — mitigação parcial adicionada:** criação de usuários e cadastro de funcionário com acesso agora usam LockService; o cadastro de cliente reutiliza criação interna sob o lock já adquirido. Revisar também todos os vínculos e demais cadastros.
 6. **Agenda:** validar explicitamente status e datas inválidas nos registros existentes; definir política para agendamentos cancelados/recusados e fusos.
 7. **Sessões:** CacheService pode expirar antes do TTL nominal e não substitui gestão de sessão persistente; comportamento precisa ser testado.
 8. **Hash de senha:** revisar algoritmo, custo e comparação em avaliação independente. O código atual é uma implementação própria iterativa baseada em HMAC, não um KDF padrão auditado.
@@ -31,3 +31,4 @@ Foi adicionado executarTestesEstruturais(), teste não destrutivo para abas, cab
 
 ## Fora do escopo concluído
 WhatsApp, recorrência, lista de espera, cancelamento/remarcação do cliente, pagamentos/descontos, calendário completo e notificações automáticas completas.
+\n\n## Correções incrementais desta revisão\n- Centralizada a criação de usuário em `criarUsuario_`, com wrapper público protegido por LockService e validação de e-mail único dentro da seção crítica.\n- Bootstrap do primeiro administrador agora também usa LockService; continua sendo função privada terminada em sublinhado.\n- Recuperação de senha ganhou limite por e-mail, limite global básico, contador de tentativas inválidas e invalidação do código após cinco erros.\n- Cadastro de funcionário remove a linha recém-criada se a criação do acesso falhar; cadastro de cliente usa a rotina interna para evitar reaquisição do lock.\n- Esses controles são mitigações iniciais, não substituem testes de integração, monitoramento nem auditoria independente. CacheService pode expirar itens antes do prazo e os limites globais são compartilhados pelo script.\n

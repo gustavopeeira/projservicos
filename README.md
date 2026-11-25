@@ -25,8 +25,8 @@ O administrador pode criar usuário vinculado ao cadastro de funcionário ou cli
 Ainda faltam testes de ponta a ponta para login, permissões, criação/aprovação de agendamentos e concorrência. O teste estrutural deve ser executado em uma cópia da planilha antes de qualquer publicação.
 
 ## Segurança e pendências conhecidas
-- O hash atual de senha é uma derivação iterativa HMAC implementada no projeto; precisa de revisão independente antes de produção.
-- A recuperação envia código por e-mail e usa limite por endereço, mas ainda precisa de limite global/por origem e proteção adicional contra tentativas repetidas de código.
+- O hash atual de senha é uma derivação iterativa HMAC implementada no projeto; precisa de revisão independente antes de produção. Não é um KDF padrão auditado.
+- A recuperação envia código por e-mail, limita solicitações por endereço e aplica um limite global básico; o código é invalidado após cinco tentativas inválidas. Os limites em CacheService são mitigação inicial e precisam de teste/monitoramento.
 - Revisar implantação do Web App, permissões OAuth, exposição de dados por perfil, política de backups e requisitos de privacidade.
 - Não há integração real com WhatsApp configurada; requer provedor externo.
 - Recorrência, lista de espera, remarcação/cancelamento pelo cliente, pagamentos/descontos e navegação completa do calendário ainda não estão concluídos.
