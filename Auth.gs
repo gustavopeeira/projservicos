@@ -13,7 +13,7 @@ const AUTH_CONFIG = Object.freeze({
 
 function normalizarEmail_(email) {
   const e = String(email || '').trim().toLowerCase();
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(e)) throw new Error('E-mail inválido.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) throw new Error('E-mail inválido.');
   return e;
 }
 function gerarSalt_() { return Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, ''); }

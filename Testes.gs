@@ -63,7 +63,10 @@ function executarTestesEstruturais() {
     try { normalizarEmail_('email-invalido'); } catch (e) { rejeitou = true; }
     if (!rejeitou) throw new Error('E-mail inválido foi aceito.');
   });
-  verificar('Políticas de recuperação configuradas', function () {\n    if (AUTH_CONFIG.RECOVERY_MAX_ATTEMPTS !== 5 || AUTH_CONFIG.RECOVERY_TTL_SECONDS !== 900 || AUTH_CONFIG.RECOVERY_REQUEST_WINDOW_SECONDS !== 60 || AUTH_CONFIG.RECOVERY_GLOBAL_LIMIT < 1) throw new Error('Limites de recuperação ausentes ou inválidos.');\n  });\n  verificar('Derivação de senha consistente', function () {
+  verificar('Políticas de recuperação configuradas', function () {
+    if (AUTH_CONFIG.RECOVERY_MAX_ATTEMPTS !== 5 || AUTH_CONFIG.RECOVERY_TTL_SECONDS !== 900 || AUTH_CONFIG.RECOVERY_REQUEST_WINDOW_SECONDS !== 60 || AUTH_CONFIG.RECOVERY_GLOBAL_LIMIT < 1) throw new Error('Limites de recuperação ausentes ou inválidos.');
+  });
+  verificar('Derivação de senha consistente', function () {
     const a = derivarSenha_('Senha-de-teste-123', 'salt-de-teste');
     const b = derivarSenha_('Senha-de-teste-123', 'salt-de-teste');
     const c = derivarSenha_('Senha-de-teste-123', 'outro-salt');
