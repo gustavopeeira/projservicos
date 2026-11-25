@@ -32,3 +32,14 @@ Foi adicionado executarTestesEstruturais(), teste não destrutivo para abas, cab
 ## Fora do escopo concluído
 WhatsApp, recorrência, lista de espera, cancelamento/remarcação do cliente, pagamentos/descontos, calendário completo e notificações automáticas completas.
 \n\n## Correções incrementais desta revisão\n- Centralizada a criação de usuário em `criarUsuario_`, com wrapper público protegido por LockService e validação de e-mail único dentro da seção crítica.\n- Bootstrap do primeiro administrador agora também usa LockService; continua sendo função privada terminada em sublinhado.\n- Recuperação de senha ganhou limite por e-mail, limite global básico, contador de tentativas inválidas e invalidação do código após cinco erros.\n- Cadastro de funcionário remove a linha recém-criada se a criação do acesso falhar; cadastro de cliente usa a rotina interna para evitar reaquisição do lock.\n- Esses controles são mitigações iniciais, não substituem testes de integração, monitoramento nem auditoria independente. CacheService pode expirar itens antes do prazo e os limites globais são compartilhados pelo script.\n
+
+## Revisão de autorização e exposição de dados — 2026-11-25
+- listarClientes exige perfil administrador ou funcionário; cliente não recebe a listagem global.
+- consultarAgenda filtra registros por cliente ou funcionário no servidor.
+- obterDadosPainel filtra agenda por vínculo antes de montar os dados exibidos.
+- listarFuncionarios é restrita ao administrador.
+- listarServicos exige sessão válida e retorna apenas o catálogo de serviços.
+- O vínculo de acesso de cliente agora é verificado e criado dentro do mesmo bloqueio de concorrência.
+- Limitação: consultarAgenda retorna os registros completos da aba AGENDAMENTOS dentro do escopo autorizado; considerar DTO explícito com campos permitidos.
+- O sufixo _ é convenção do Apps Script para impedir chamadas diretas via google.script.run; a segurança também depende de validações no servidor.
+- Revisão estática, sem testes de isolamento no runtime Apps Script.

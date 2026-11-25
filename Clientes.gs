@@ -26,8 +26,11 @@ function salvarCliente(d,token){
 }
 function criarAcessoCliente(clienteId,email,senha,token){
   exigirPerfil_(['ADMINISTRADOR'],token);
-  const c=records_('CLIENTES').find(x=>String(x.ID)===String(clienteId));
-  if(!c)throw Error('Cliente não encontrado.');
-  if(records_('USUARIOS').some(x=>String(x.REFERENCIA_ID)===String(c.ID)&&String(x.PERFIL)==='CLIENTE'))throw Error('Este cliente já possui acesso.');
-  return criarUsuario({REFERENCIA_ID:c.ID,NOME_EXIBICAO:c.NOME,EMAIL:email,PERFIL:'CLIENTE',SENHA:senha},token);
+  const lock=LockService.getScriptLock();lock.waitLock(10000);
+  try{
+    const c=records_('CLIENTES').find(x=>String(x.ID)===String(clienteId));
+    if(!c)throw Error('Cliente não encontrado.');
+    if(records_('USUARIOS').some(x=>String(x.REFERENCIA_ID)===String(c.ID)&&String(x.PERFIL)==='CLIENTE'))throw Error('Este cliente já possui acesso.');
+    return criarUsuario_({REFERENCIA_ID:c.ID,NOME_EXIBICAO:c.NOME,EMAIL:email,PERFIL:'CLIENTE',SENHA:senha},token);
+  }finally{lock.releaseLock();}
 }
