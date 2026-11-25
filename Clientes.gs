@@ -7,6 +7,7 @@ function salvarCliente(d,token){
   if(!d||!String(d.NOME||'').trim())throw Error('Informe o nome do cliente.');
   const t=String(d.TELEFONE||'').replace(/\D/g,'');
   if(t.length<8)throw Error('Informe um telefone válido.');
+  if(d.CRIAR_ACESSO){if(!['ADMINISTRADOR'].includes(usuarioDaSessao_(token).PERFIL))throw Error('Somente o administrador pode criar acessos de clientes.');const e=normalizarEmail_(d.USUARIO_EMAIL||d.EMAIL);if(records_('USUARIOS').some(x=>String(x.EMAIL||'').toLowerCase()===e))throw Error('Este e-mail já possui cadastro de acesso.');derivarSenha_(d.SENHA_INICIAL,'validacao');}
   const lock=LockService.getScriptLock();lock.waitLock(10000);
   try{
     let r=records_('CLIENTES').find(x=>String(x.TELEFONE||'').replace(/\D/g,'')===t);

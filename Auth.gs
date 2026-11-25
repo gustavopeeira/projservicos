@@ -39,7 +39,7 @@ function criarUsuario(d, token) {
   exigirPerfil_(['ADMINISTRADOR'], token);
   if (!d || !['ADMINISTRADOR','FUNCIONARIO','CLIENTE'].includes(String(d.PERFIL).toUpperCase())) throw new Error('Perfil inválido.');
   const email = normalizarEmail_(d.EMAIL);
-  if (usuarioPorEmail_(email)) throw new Error('Este e-mail já possui acesso.');
+  if (records_('USUARIOS').some(u => String(u.EMAIL || '').toLowerCase() === email)) throw new Error('Este e-mail já possui acesso.');
   const perfil = String(d.PERFIL).toUpperCase();
   if (perfil !== 'ADMINISTRADOR' && !d.REFERENCIA_ID) throw new Error('Vincule o usuário ao cadastro correspondente.');
   const salt = gerarSalt_();

@@ -7,6 +7,7 @@ function salvarFuncionario(d,token){
   if(!d||!String(d.NOME||'').trim())throw Error('Informe o nome.');
   const email=String(d.EMAIL||'').trim().toLowerCase();
   if(d.CRIAR_ACESSO&&(!email||!d.SENHA_INICIAL))throw Error('Para criar acesso, informe e-mail e senha inicial.');
+  if(d.CRIAR_ACESSO){if(records_('USUARIOS').some(x=>String(x.EMAIL||'').toLowerCase()===email))throw Error('Este e-mail já possui cadastro de acesso.');derivarSenha_(d.SENHA_INICIAL,'validacao');}
   const r={ID:id_('FUN'),NOME:String(d.NOME).trim(),TELEFONE:d.TELEFONE||'',EMAIL:email,ESPECIALIDADES:d.ESPECIALIDADES||'',ATIVO:true,CRIADO_EM:new Date()};
   sheet_('FUNCIONARIOS').appendRow(SHEET_SCHEMAS.FUNCIONARIOS.map(k=>r[k]??''));
   let acesso=null;

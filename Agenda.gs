@@ -17,6 +17,7 @@ function validarDisponibilidade_(funcId,inicio,fim){
   const maxDias=Number(configValor_('ANTECEDENCIA_MAXIMA_DIAS',60));
   if(inicio.getTime()<agora.getTime()+minHoras*3600000)throw Error('O agendamento precisa respeitar a antecedência mínima de '+minHoras+' hora(s).');
   if(inicio.getTime()>agora.getTime()+maxDias*86400000)throw Error('O agendamento ultrapassa o limite de '+maxDias+' dias de antecedência.');
+  if(Utilities.formatDate(inicio,APP_CONFIG.TIMEZONE,'yyyy-MM-dd')!==Utilities.formatDate(fim,APP_CONFIG.TIMEZONE,'yyyy-MM-dd'))throw Error('O agendamento não pode atravessar a meia-noite.');
   const dia=diaSemana_(inicio), ini=minutosHora_(Utilities.formatDate(inicio,APP_CONFIG.TIMEZONE,'HH:mm'));
   const fimMin=minutosHora_(Utilities.formatDate(fim,APP_CONFIG.TIMEZONE,'HH:mm'));
   const horarios=records_('HORARIOS_FUNCIONARIOS').filter(x=>String(x.FUNCIONARIO_ID)===String(funcId)&&Number(x.DIA_SEMANA)===dia&&String(x.ATIVO).toUpperCase()!=='FALSE');
